@@ -1,17 +1,16 @@
-# ginlong-python
-Get data from Solis 4.6K 2G Single Phase Inverter and log to file, with scripts to show data, or
-get daily totals (4G inverter has acompletely different format).
-It doesn't yet cope with the Solis Mini 1000 2G invertor - I'll try to add decoding for that if I get some data!
-Other 2G invertors may also work - please let me know if the data output from yours doesn't look right,
-and I can try to improve the data analysis.
+# WORK IN PROGRESS
 
-When configured correctly (see below), Solis invertors will send data about their performance every 5 minutes
-to code waiting to receive the data.
-This is the same data as can be sent to the ginlogmonitoring.com website for centralised data collection.
+# ginlong2pvouput
 
-Note that all scripts use Python 3
+This builds on https://github.com/simon3270/ginlong-python for automatically capturing the data from a Solis / Ginlong solar inverter (mine is a Solis 3.6-DT-DC), processing them and uploading automatically to pvoutput.org at the end of each day.
 
-The scripts will process data from the WiFi and LAN Data Logger Sticks (they have very different data formats!).
+The ginserv.py and ginserv_tcp.py scripts are unchanged - they capture the data from the inverter but don't process it further.
+
+get_data.py has been changed slightly to process the logs into a format suitable for uploading automatically to pvouput.org, using their API.
+
+When configured correctly (see below), Solis invertors will send data about their performance every 5 minutes to code waiting to receive the data. This is the same data as can be sent to the ginlogmonitoring.com website for centralised data collection.
+
+Note that all scripts use Python 3. The scripts will process data from the WiFi and LAN Data Logger Sticks (they have very different data formats!).
 
 ## ginserv.py & ginserv_tcp.py
 
