@@ -1,0 +1,33 @@
+#!/bin/bash
+# Config section
+pvoutput_api=###	                                        	# API key for pvouput.org
+pvoutput_site=###			                                			# Site ID for pvouput.org 
+api_url=https://pvoutput.org/service/r2/addbatchstatus.jsp	# Curl will call this
+# End of config section
+
+today=$(date +%Y%m%d)						# Today's date yyyymmdd
+
+python get_data.py logs/$today.ginserv.log > logs/$today.pvoutput.log		# Convert raw ginlong output to date,time,Wh_today,W_snap
+
+linecount=$(wc -l < logs/$today.pvoutput.log)
+
+# This notification section optional
+# echo $today.pvoutput.log created with $linecount lines
+# if (( $linecount < 50  )); then							# Alert only sent if less than 50 lines in today's log
+#	curl -X POST -H "Content-Type: application/json" -d '{"value1":"'$today'.pvoutput.log created with '$linecount' lines"}' https://maker.ifttt.com/blah
+# 
+# fi
+
+split -d -l 30 logs/$today.pvoutput.log logs/$today.pvoutput.   # Splits to 30 lines due to API limit
+
+for i in logs/$today.pvoutput.0*; do
+	batchstring="$(tr -s \"\\n\" \"\;\" < $i)"			              # Parse the file, replace newlines with semicolons
+	batchstring="$(sed 's/;$//' <<< $batchstring)"			          # Remove trailing semicolon
+	curl -d "data=$batchstring" -H "X-Pvoutput-Apikey: $pvoutput_api" -H "X-Pvoutput-SystemId: $pvoutput_site" $api_url
+done
+
+rm logs/$today.pvoutput.0*					# Clean up split file parts 
+mv ginserv.log_*_* rawlogs/					# Move raw logs from ginserv.py out the way 
+
+tar -czvf logs/$(date +%Y-%m).pvoutput.logs.tar.gz logs/$(date +%Y%m)*.pvoutput.log
+tar -czvf logs/$(date +%Y-%m).ginserv.logs.tar.gz logs/$(date +%Y%m)*.ginserv.log
