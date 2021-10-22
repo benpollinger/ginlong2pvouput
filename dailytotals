@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Reads solar log files as parameters, and gets the daily totals.
+# Each ouput line has:
+# Date, time of first entry, time of last entry, number of entries, daily total kwH
+
+cd logs
+
+for i in *$(date +%m)*.pvoutput.log; do
+	firstline=$(head -1 $i)
+	lastline=$(tail -1 $i)
+	first=${firstline:9:5}
+	last=${lastline:9:5}
+	logdate=${firstline:0:8}
+	linecount=$(cat $i 2>/dev/null | wc -l)
+	Wh=$(cut -d "," -f3 <<< $lastline)
+	kWh=$(echo "scale=1; $Wh/1000" | bc | sed 's/^\./0./')
+	summaryfile=../summaries/${logdate:0:6}-summary.txt
+	printf "$logdate \t $kWh \t $first \t $last \t $linecount \n" >> $summaryfile
+done
+
+
+sort -u -o $summaryfile{,}									# Sorts and deduplicates lines
+echo -e "Logdate \t kWh \t First \t Last \t Linecount \n$(cat $summaryfile)" > $summaryfile	# Adds header line
+if [[ $(tail -1 $summaryfile) == *"First"* ]] ; then						# Removes extra header line if it exists
+ sed -i '$ d' $summaryfile
+fi
