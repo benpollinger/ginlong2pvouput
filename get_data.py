@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # Reads solar log files as parameters, and prints off (some of) the data in each entry
-# Each ouput line has:
-print("Date,Time,VDC1,VDC2,IDC1,IDC2,VAC1,CurrW,TodaykW,TotalkW")
-# Date, time of entry, DC Volts 1+2, DC Amps 1+2, AC Volts, Current Watts, daily total kWH, overall toal kWH
+# Each ouput line is formatted for pvoutput.org using addbatchstatus.jsp:
+# (see https://pvoutput.org/help/api_specification.html#add-batch-status-service)
+# print ("Date,Time,TodayWh,CurrW,,,,VAC1")
+# Date, time of entry, daily total Wh, current W, AC voltage
+# Extra commas in the entry are to skip empty fields
 # Now supports WiFi Logger using TCP and UDP, and LAN Logger using UDP
 
 import sys
@@ -87,8 +89,8 @@ def proc_line(line):
     if re.match("^\S\S\S \S\S\S [ 1-3][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9][0-9][0-9] [0-9]", line):
         # Got a date - remember it
         line_splt = line.strip().split()
-        curr_date = date.fromtimestamp(float(line_splt[-1])).strftime("%d/%m/%Y")
-        curr_tim = line[11:19]
+        curr_date = date.fromtimestamp(float(line_splt[-1])).strftime("%Y%m%d")
+        curr_tim = line[11:16]
     elif len(line) > 50 and re.match("^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:", line):
         # Got a data entry - report values
         # Only use if byte 12 is 0x81 (ox80 implies a short non-data message)
@@ -98,24 +100,18 @@ def proc_line(line):
                 if byte0 == 0x68:
                     # vdc1+2 33 35 , idc1+2 39 41, w 73
                     bigend = True
-                    print("%s,%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.0f,%.1f,%.1f" % (curr_date, curr_tim,
-                                     get_float2(line, 33, bigend), get_float2(line, 35, bigend),
-                                     get_float2(line, 39, bigend), get_float2(line, 41, bigend),
-                                     get_float2(line, 51, bigend), get_float2(line, 59, bigend, 1.0),
-                                     get_float2(line, 69, bigend)/10.0, get_float4(line, 71, bigend)))
+                    print("%s,%s,%.0f,%.0f,,,,%.1f" % (curr_date, curr_tim,
+                                     get_float2(line, 69, bigend)*100, get_float2(line, 59, bigend, 1.0),
+                                     get_float2(line, 51, bigend)))
                 else:
                     bigend = False
-                    print("%s,%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.0f,%.1f,%.1f" % (curr_date, curr_tim,
-                                     get_float2(line, 50, bigend), get_float2(line, 52, bigend),
-                                     get_float2(line, 54, bigend), get_float2(line, 56, bigend),
-                                     get_float2(line, 64, bigend), get_float2(line, 72, bigend, 1.0),
-                                     get_float2(line, 76, bigend)/10.0, get_float4(line, 80, bigend)))
+                    print("%s,%s,%.0f,%.0f,,,,%.1f" % (curr_date, curr_tim,
+                                     get_float2(line, 76, bigend)*100, get_float2(line, 72, bigend, 1.0),
+                                     get_float2(line, 64, bigend)))
             except:
                 print("Error reading entry at %s %s: %s" % (curr_date, curr_tim, line))
                 sys.exit(1)
                 pass
-
-print("Date,Time,VDC1,VDC2,IDC1,IDC2,VAC1,CurrW,TodaykW,TotalkW")
 
 for line in fileinput.input():
     proc_line(line)
