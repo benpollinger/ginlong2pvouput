@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# This is a script to upload a pvoutput.log file to pvoutput.org
+# Call it with uploadpvo.sh logfilename
+
+pvoutput_api=###	                                          	# API key for pvouput.org
+pvoutput_site=###	                                					  # Site ID for pvouput.org 
+api_url=https://pvoutput.org/service/r2/addbatchstatus.jsp	  # Curl will call this
+
+split -d -l 30 $1 $1.  # Splits to 30 lines due to API limit
+
+for i in $1.0*; do
+	batchstring="$(tr -s \"\\n\" \"\;\" < $i)"			            # Parse the file, replace newlines with semicolons
+	batchstring="$(sed 's/;$//' <<< $batchstring)"	        		# Remove trailing semicolon
+#	echo curl -d \"data=$batchstring\" -H \"X-Pvoutput-Apikey:\ $pvoutput_api\" -H \"X-Pvoutput-SystemId:\ $pvoutput_site\" $api_url
+	curl -d "data=$batchstring" -H "X-Pvoutput-Apikey: $pvoutput_api" -H "X-Pvoutput-SystemId: $pvoutput_site" $api_url
+
+done
+
+rm $1.0*					# Clean up split file parts 
+
+
+
+
