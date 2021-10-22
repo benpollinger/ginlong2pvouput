@@ -4,74 +4,36 @@
 
 This builds on https://github.com/simon3270/ginlong-python for automatically capturing the data from a Solis / Ginlong solar inverter (mine is a Solis 3.6-DT-DC), processing them and uploading automatically to pvoutput.org at the end of each day.
 
-The ginserv.py and ginserv_tcp.py scripts are unchanged - they capture the data from the inverter but don't process it further.
+The `ginserv.py` and `ginserv_tcp.py` scripts are unchanged - they capture the data from the inverter but don't process it further. `get_data.py` has been changed slightly to make further processing simpler using the Bash scripts I've written. These uploading each day's data automatically to pvouput.org, using their API.
 
-get_data.py has been changed slightly to process the logs into a format suitable for uploading automatically to pvouput.org, using their API.
+## ginserv2pvoutput
 
-When configured correctly (see below), Solis invertors will send data about their performance every 5 minutes to code waiting to receive the data. This is the same data as can be sent to the ginlogmonitoring.com website for centralised data collection.
+Runs in the evening (set up with cron). This is the main script which calls a few others:
+1. Calls `get_data.py` to convert today's `ginserv.log` to `pvoutput.log`
+2. Checks if the day's log contains less than 50 records, which likely indicates a problem with the inverter sending data or the ginserv.py script not catching it properly. You can configure it to email you or use [IFTTT](https://ifttt.com/) to notify you.
+3. Splits the day's log into 30 line chunks - this is the limit of one call to the pvoutput.org `addbatchstatus.jsp` API service
+4. Parses each 30 line chunk into a string which is sent to the pvoutput.org API using curl
+5. The last few commands clean up temporary files and backs up the logs.
 
-Note that all scripts use Python 3. The scripts will process data from the WiFi and LAN Data Logger Sticks (they have very different data formats!).
+There are 3 configuration fields:
+1. `pvoutput_api` is your API key from https://pvoutput.org/account.jsp
+2. `pvoutput_site` is your system id number from pvoutput.org - at the bottom of https://pvoutput.org/account.jsp
+3. `api_url` is entered already, can be changed here if pvoutput.org ever changes it.
 
-## ginserv.py & ginserv_tcp.py
+## dailytotals
 
-Scripts to receive data from a Ginlong Data Logger (wireless or LAN) and write it to a log file.
-It doesn't worry about data formats - it just writes each record out as it is received, but in ASCII rather than binary.
+Steps through each daily log (in pvoutput format) in the logs folder, creates a monthly summary of each day's kWh total, time of first and last entry, and number of lines.
 
-Note that these scripts are designed to run for a while, then terminate.
-You should write a wrapper script which starts this script in a loop, so that when it stops it is automatically restarted.
-This could be as simple as this (which logs to files with the current date and time in the name):
+## showlatest
 
-    while true; do
-      python3 ginserv.py > gindata.log_$(date '+%Y%m%d_%H%M%S')
-      sleep 30
-    done
-    
-There are UDP and TCP versions. I prefer the UDP, as this suffers less from locked binds
-(e.g. if a TCP receiver fails, it may hold onto the receive port for
-extended periods, blocking any more data being received).
+Finds the most recent pvoutput.log in the logs folder and shows it using cat
 
-A WiFi TCP connection will receive only the long (103-byte) messages, containing
-performance data for the Inverter.
+## uploadpvo
 
-A WiFi UDP connection will receive the same 103-byte message, and a 55-byte message
-with firmare information about the inverter.
+Uploads a specified pvoutput.log file to pvoutput.org - call it with uploadpvo logs/logfilename
 
-A LAN UDP connection receives a 105-byte message containing the voltage and power information every 5 minutes,
-and a 14-byte message (of unknown contents) every minute.
-It might be my network, but each message gets sent twice at exactly the same time.
 
-To configure, go to the Solis Data Logger web interface, then "Advanced" and
-"Remote Monitoring" (on the WiFi stick), or just "Manual" (LAN Stick).
-Leave the first entry ("Default") alone, and on the second
-line enter the IP address of the machine running this script, with Port 5433
-and Connection UDP or TCP.
-With the appropriate (UDP or TCP) script running, click "Test" and see the tick.
 
-## get_data.py
 
-Prints out information from log files named on the command line. It prints out
-the data for each data line in the log file. It reports:
 
-Date,Time,VDC1,VDC2,IDC1,IDC2,VAC1,CurrW,TodaykW,TotalkW
-
-## get_tots.py
-
-Prints out daily totals for log files named on the command line.
-
-This runs through the files, noting the first and last entries for each day,
-and the total KwH for that day. It counts the number of records each day
-(only counting the duplicated mesasges from the LAN stick once).
-
-Each day has:
-
-Date, Time of first reading, Time of last, Number of readings,
-Total kWH for invertor, Difference from previous day
-
-## gindata.txt
-
-A text description of the records available.
-
-# Support files
-
-The `support` directory contains scripts to support running of the above logging programs,
-and `crontab` entries to run the scripts.
+The `support` directory contains scripts to support running of the above logging programs, and `crontab` entries to run the scripts.
