@@ -5,7 +5,7 @@
 scriptdir=/usr/local/src/ginlong2pvoutput
 # End of config
 
-
+cd "$scriptdir"
 lastlog=$(ls -tr ginserv.log*|tail -1)
 
 if [ "$lastlog" = "ginserv.log" ]; then
