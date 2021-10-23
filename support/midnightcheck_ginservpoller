@@ -7,6 +7,7 @@
 scriptdir=/usr/local/src/ginlong2pvoutput
 # End of config
 
+cd "$scriptdir"
 ./killginservpoller
 
 # Leave time for the run poller to rename the latest file
