@@ -1,7 +1,9 @@
 #!/bin/bash
+# Config section - set the absolute path to where ginserv.py lives
+scriptdir=/usr/local/src/ginlong2pvoutput
+# End of config
 
-# Go to where the ginserv poller files are
-cd ~/src/ginlong_poller
+cd "$scriptdir"
 
 # First time round, start the poller immediately
 pollsleep=0
