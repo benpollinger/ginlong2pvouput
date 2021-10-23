@@ -1,5 +1,3 @@
-# WORK IN PROGRESS
-
 # ginlong2pvouput
 
 This builds on https://github.com/simon3270/ginlong-python for automatically capturing the data from a Solis / Ginlong solar inverter (mine is a Solis 3.6-DT-DC), processing them and uploading automatically to pvoutput.org at the end of each day.
@@ -32,8 +30,6 @@ Finds the most recent pvoutput.log in the logs folder and shows it using cat
 
 Uploads a specified pvoutput.log file to pvoutput.org - call it with uploadpvo logs/logfilename
 
+## Support directory
 
-
-
-
-The `support` directory contains scripts to support running of the above logging programs, and `crontab` entries to run the scripts.
+Contains scripts to support running of the above, and `crontab` entries to run the scripts.
